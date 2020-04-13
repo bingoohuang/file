@@ -3,7 +3,7 @@ MIT Licence
 
 Maintainer: Joeky <jj16180339887@gmail.com>
 --------------------------------------------------*/
-
+// nolint gomnd
 package main
 
 import (
@@ -11,8 +11,10 @@ import (
 )
 
 const (
-	MAX_FILENAME_LENGTH = 256
-	MAX_BYTES_TO_READ   = 2 * 1024 // 2KB buffer to read file
+	// MaxFilenameLength defines the maximum file name length.
+	MaxFilenameLength = 256
+	// MaxBytesToRead defines the maximum number of bytes to read from the file.
+	MaxBytesToRead = 2 * 1024 // 2KB buffer to read file
 )
 
 func main() {
@@ -27,7 +29,7 @@ func main() {
 			continue
 		}
 
-		if len(filename) > MAX_FILENAME_LENGTH {
+		if len(filename) > MaxFilenameLength {
 			print("File name too long.")
 			continue
 		}
@@ -75,7 +77,7 @@ func regularFile(filename string) {
 	// checkerr(err)
 	defer file.Close()
 
-	var contentByte = make([]byte, MAX_BYTES_TO_READ)
+	var contentByte = make([]byte, MaxBytesToRead)
 
 	numByte, _ := file.Read(contentByte)
 	// if err != nil && err != io.EOF {
@@ -90,47 +92,48 @@ func regularFile(filename string) {
 		magic = peekLe(contentByte[60:], 4)
 	}
 
-	if lenb >= 45 && HasPrefix(contentByte, "\x7FELF") {
+	switch {
+	case lenb >= 45 && HasPrefix(contentByte, "\x7FELF"):
 		print("Elf file ")
 		doElf(contentByte)
-	} else if lenb >= 8 && HasPrefix(contentByte, "!<arch>\n") {
+	case lenb >= 8 && HasPrefix(contentByte, "!<arch>\n"):
 		print("ar archive")
-	} else if lenb > 28 && HasPrefix(contentByte, "\x89PNG\x0d\x0a\x1a\x0a") {
+	case lenb > 28 && HasPrefix(contentByte, "\x89PNG\x0d\x0a\x1a\x0a"):
 		print("PNG image data")
-	} else if lenb > 16 &&
-		(HasPrefix(contentByte, "GIF87a") || HasPrefix(contentByte, "GIF89a")) {
+	case lenb > 16 &&
+		(HasPrefix(contentByte, "GIF87a") || HasPrefix(contentByte, "GIF89a")):
 		print("GIF image data")
-	} else if lenb > 32 && HasPrefix(contentByte, "\xff\xd8") {
+	case lenb > 32 && HasPrefix(contentByte, "\xff\xd8"):
 		print("JPEG image data")
-	} else if lenb > 8 && HasPrefix(contentByte, "\xca\xfe\xba\xbe") {
+	case lenb > 8 && HasPrefix(contentByte, "\xca\xfe\xba\xbe"):
 		print("Java class file")
-	} else if lenb > 8 && HasPrefix(contentByte, "dex\n") {
+	case lenb > 8 && HasPrefix(contentByte, "dex\n"):
 		print("Android dex file")
-	} else if lenb > 500 && Equal(contentByte[257:262], "ustar") {
+	case lenb > 500 && Equal(contentByte[257:262], "ustar"):
 		print("Posix tar archive")
-	} else if lenb > 5 && HasPrefix(contentByte, "PK\x03\x04") {
+	case lenb > 5 && HasPrefix(contentByte, "PK\x03\x04"):
 		print("Zip archive data")
-	} else if lenb > 4 && HasPrefix(contentByte, "BZh") {
+	case lenb > 4 && HasPrefix(contentByte, "BZh"):
 		print("bzip2 compressed data")
-	} else if lenb > 10 && HasPrefix(contentByte, "\x1f\x8b") {
+	case lenb > 10 && HasPrefix(contentByte, "\x1f\x8b"):
 		print("gzip compressed data")
-	} else if lenb > 32 && Equal(contentByte[1:4], "\xfa\xed\xfe") {
+	case lenb > 32 && Equal(contentByte[1:4], "\xfa\xed\xfe"):
 		print("Mach-O")
-	} else if lenb > 36 && HasPrefix(contentByte, "OggS\x00\x02") {
+	case lenb > 36 && HasPrefix(contentByte, "OggS\x00\x02"):
 		print("Ogg data")
-	} else if lenb > 32 && HasPrefix(contentByte, "RIF") &&
-		Equal(contentByte[8:16], "WAVEfmt ") {
+	case lenb > 32 && HasPrefix(contentByte, "RIF") &&
+		Equal(contentByte[8:16], "WAVEfmt "):
 		print("WAV audio")
-	} else if lenb > 12 && HasPrefix(contentByte, "\x00\x01\x00\x00") {
+	case lenb > 12 && HasPrefix(contentByte, "\x00\x01\x00\x00"):
 		print("TrueType font")
-	} else if lenb > 12 && HasPrefix(contentByte, "ttcf\x00") {
+	case lenb > 12 && HasPrefix(contentByte, "ttcf\x00"):
 		print("TrueType font collection")
-	} else if lenb > 4 && HasPrefix(contentByte, "BC\xc0\xde") {
+	case lenb > 4 && HasPrefix(contentByte, "BC\xc0\xde"):
 		print("LLVM IR bitcode")
-	} else if HasPrefix(contentByte, "-----BEGIN CERTIFICATE-----") {
+	case HasPrefix(contentByte, "-----BEGIN CERTIFICATE-----"):
 		print("PEM certificate")
-	} else if magic != -1 && HasPrefix(contentByte, "MZ") && magic < lenb-4 &&
-		Equal(contentByte[magic:magic+4], "\x50\x45\x00\x00") {
+	case magic != -1 && HasPrefix(contentByte, "MZ") && magic < lenb-4 &&
+		Equal(contentByte[magic:magic+4], "\x50\x45\x00\x00"):
 
 		print("MS executable")
 		if peekLe(contentByte[magic+22:], 2)&0x2000 != 0 {
@@ -145,8 +148,8 @@ func regularFile(filename string) {
 				print(types[tp])
 			}
 		}
-	} else if lenb > 50 && HasPrefix(contentByte, "BM") &&
-		Equal(contentByte[6:10], "\x00\x00\x00\x00") {
+	case lenb > 50 && HasPrefix(contentByte, "BM") &&
+		Equal(contentByte[6:10], "\x00\x00\x00\x00"):
 		print("BMP image")
 	}
 }
@@ -182,9 +185,9 @@ func doElf(contentByte []byte) {
 
 	switch bits {
 	case 1:
-		print("32bit ")
+		print("32-bit ")
 	case 2:
-		print("64bit ")
+		print("64-bit ")
 	}
 
 	switch endian {
@@ -230,10 +233,10 @@ func doElf(contentByte []byte) {
 	for i := 0; i < phnum; i++ {
 		phdr := contentByte[phoff+i*phentsize:]
 		// char *phdr = map+phoff+i*phentsize;
-		p_type := elfint(phdr, 4)
+		pType := elfint(phdr, 4)
 
-		dynamic = (p_type == 2) || dynamic /*PT_DYNAMIC*/
-		if p_type != 3 /*PT_INTERP*/ && p_type != 4 /*PT_NOTE*/ {
+		dynamic = (pType == 2) || dynamic /*PT_DYNAMIC*/
+		if pType != 3 /*PT_INTERP*/ && pType != 4 /*PT_NOTE*/ {
 			continue
 		}
 
@@ -241,7 +244,7 @@ func doElf(contentByte []byte) {
 		// p_offset := elfint(phdr[4*j:], 4*j)
 		// p_filesz := elfint(phdr[16*j:], 4*j)
 
-		if p_type == 3 /*PT_INTERP*/ {
+		if pType == 3 /*PT_INTERP*/ {
 			print(", dynamically linked")
 			//   print(p_filesz)
 			//   print(contentByte[p_offset*2:])
@@ -253,19 +256,23 @@ func doElf(contentByte []byte) {
 	}
 }
 
+// HasPrefix tests whether s has prefix.
 func HasPrefix(s []byte, prefix string) bool {
 	return len(s) >= len(prefix) && Equal(s[:len(prefix)], prefix)
 }
 
+// Equal tests the equality a and b.
 func Equal(a []byte, b string) bool {
 	if len(a) != len(b) {
 		return false
 	}
+
 	for i, v := range []byte(b) {
 		if v != a[i] {
 			return false
 		}
 	}
+
 	return true
 }
 
